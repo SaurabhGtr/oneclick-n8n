@@ -55,6 +55,9 @@ cd /var/n8n
 #---------------------------------------
 gen_secret() { openssl rand -base64 32 | tr -d '\n'; }
 
+POSTGRES_PASSWORD_VALUE=$(gen_secret)
+N8N_ENCRYPTION_VALUE=$(gen_secret)
+
 cat > .env <<EOF
 DOMAIN=${DOMAIN}
 ADMIN_EMAIL=${ADMIN_EMAIL}
@@ -64,10 +67,10 @@ N8N_PORT=5678
 N8N_PROTOCOL=https
 WEBHOOK_URL=https://${DOMAIN}/
 GENERIC_TIMEZONE=Asia/Kolkata
-N8N_ENCRYPTION_KEY=$(gen_secret)
+N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_VALUE}
 
 POSTGRES_USER=n8n
-POSTGRES_PASSWORD=$(gen_secret)
+POSTGRES_PASSWORD=${POSTGRES_PASSWORD_VALUE}
 POSTGRES_DB=n8n
 
 BACKUP_DIR=/var/n8n/backups
@@ -212,6 +215,27 @@ chown -R 1000:1000 /var/n8n/n8n
 echo "[SSL] Requesting certificate..."
 certbot --nginx -d "${DOMAIN}" -m "${ADMIN_EMAIL}" --agree-tos -n || true
 
+#---------------------------------------
+# 12) Display Database Password ONCE
+#---------------------------------------
+DB_PASS=$(grep POSTGRES_PASSWORD /var/n8n/.env | cut -d= -f2-)
+
+echo ""
+echo "====================================="
+echo "🔐 IMPORTANT — SAVE YOUR DB PASSWORD"
+echo "====================================="
+echo "PostgreSQL Password:"
+echo "-------------------------------------"
+echo "$DB_PASS"
+echo "-------------------------------------"
+echo "⚠️ You will NOT be shown this password again."
+echo "It is stored securely in: /var/n8n/.env"
+echo "====================================="
+echo ""
+
+#---------------------------------------
+# 13) Done
+#---------------------------------------
 echo "====================================="
 echo "   🎉 INSTALL COMPLETE!"
 echo "====================================="
